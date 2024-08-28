@@ -1,0 +1,28 @@
+- hosts: terraform-ansible
+  tasks:
+  - name: Instalando o Python3, virtualenv
+    apt:
+      pkg: 
+      - python3
+      - virtualenv
+      update_cache: yes   # atualiza os pacotes da maquina
+    become: yes           # executa a task como root
+  - name: Instando dependecias com pip (Django e Django Rest)
+    pip:
+      virtualenv: /home/ubuntu/app/venv
+      name:
+        - django
+        - djangorestframework
+  - name: Iniciando projeto
+    shell: '. /home/ubuntu/app/venv/bin/activate; django-admin startproject setup /home/ubuntu/app/'
+  - name: Alterando ALLOWED_HOSTS no arquivo settings.py do django
+    lineinfile:
+      path: /home/ubuntu/app/setup/settings.py
+      regexp: 'ALLOWED_HOSTS'
+      line: 'ALLOWED_HOSTS = ["*"]'
+      backrefs: yes # se a linha não for encontrada no settings.py, não fazer nada
+  - name: Subindo servidor django
+    shell: 'cd /home/ubuntu/app; . venv/bin/activate; python manage.py runserver 0.0.0.0:8000'
+    async: 1 # roda a tarefa em modo assicrono. '1' representa o tempo de assincronismo em segundos
+    poll: 0 # não espera a conclusão da tarefa
+    
